@@ -157,6 +157,7 @@ celerybeat-schedule
 venv*/
 ENV*/
 
+yolov5-env
 # Spyder project settings
 .spyderproject
 .spyproject

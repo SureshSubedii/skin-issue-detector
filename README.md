@@ -511,3 +511,12 @@ For bug reports and feature requests related to YOLOv5, please visit [GitHub Iss
   <img src="https://github.com/ultralytics/assets/raw/main/social/logo-transparent.png" width="3%" alt="space">
   <a href="https://discord.com/invite/ultralytics"><img src="https://github.com/ultralytics/assets/raw/main/social/logo-social-discord.png" width="3%" alt="Ultralytics Discord"></a>
 </div>
+
+
+
+## About This Model
+Modified By Suresh Subedi.
+This model is a custom-trained YOLOv5 object detector designed to detect skin issues.
+The model weights are saved in `weinhts/best.pt` and can be used for inference or further fine-tuning.
+
+
