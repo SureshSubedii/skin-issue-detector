@@ -243,6 +243,17 @@ def run(
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
+
+                # Draw legend of class names and colors
+                unique_classes = det[:, -1].unique()
+                for i, c in enumerate(unique_classes):
+                    class_id = int(c)
+                    class_name = names[class_id]
+                    color = colors(c, True)
+                    cv2.rectangle(im0, (10, 30 + i * 30), (30, 50 + i * 30), color, -1)
+                    cv2.putText(im0, f'{class_name}', (35, 48 + i * 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()
 
@@ -275,7 +286,7 @@ def run(
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f"{names[c]} {conf:.2f}")
-                        annotator.box_label(xyxy, label, color=colors(c, True))
+                        annotator.box_label(xyxy, label=None, color=colors(c, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True)
 
