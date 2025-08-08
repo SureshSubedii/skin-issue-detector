@@ -34,6 +34,7 @@ import os
 import platform
 import sys
 from pathlib import Path
+import numpy as np
 
 import torch
 
@@ -243,16 +244,53 @@ def run(
             imc = im0.copy() if save_crop else im0  # for save_crop
             annotator = Annotator(im0, line_width=line_thickness, example=str(names))
             if len(det):
-
-                # Draw legend of class names and colors
                 unique_classes = det[:, -1].unique()
+
+                img_h = im0.shape[0]
+
+                # Scale font size
+                font_scale = max(0.5, img_h / 1000)
+                thickness = max(1, int(img_h / 500))
+                padding = int(img_h / 150)
+
+                min_rect_height = 18
+                min_rect_width = 25  # minimum swatch width
+
                 for i, c in enumerate(unique_classes):
                     class_id = int(c)
                     class_name = names[class_id]
                     color = colors(c, True)
-                    cv2.rectangle(im0, (10, 30 + i * 30), (30, 50 + i * 30), color, -1)
-                    cv2.putText(im0, f'{class_name}', (35, 48 + i * 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+                    # Measure text
+                    (text_w, text_h), baseline = cv2.getTextSize(
+                        class_name, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness
+                    )
+
+                    rect_height = max(min_rect_height, text_h + baseline + 8)
+                    rect_width = max(min_rect_width, int(rect_height * 1.2))  # keep proportion
+
+                    step_y = rect_height + padding
+
+                    y1 = 30 + i * step_y
+                    y2 = y1 + rect_height
+
+                    # Draw wider rectangle
+                    cv2.rectangle(im0, (10, y1), (10 + rect_width, y2), color, -1)
+
+                    # Text
+                    text_y = y1 + (rect_height + text_h) // 2
+
+                    # Draw shadow for “bold” effect
+                    cv2.putText(im0, class_name, (15 + rect_width + 1, text_y + 1),
+                                cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), 2)
+
+                    # Draw main text thinner
+                    cv2.putText(im0, class_name, (15 + rect_width, text_y),
+                                cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), 1)
+
+
+
+
 
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_boxes(im.shape[2:], det[:, :4], im0.shape).round()

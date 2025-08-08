@@ -3,6 +3,10 @@ import os
 import uuid
 import time
 import shutil
+import base64
+from flask import jsonify
+
+
 
 app = Flask(__name__)
 
@@ -16,11 +20,12 @@ os.makedirs(RESULT_FOLDER, exist_ok=True)
 def index():
     if request.method == 'POST':
         file = request.files['file']
-        filename = f"{uuid.uuid4()}.jpg"
+        unique_name = str(uuid.uuid4())
+        filename = f"{unique_name}.jpg"
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
 
-        os.system(f"python detect.py --weights weights/best.pt --img 640 --conf 0.1 --source {filepath} --save-txt")
+        os.system(f"python3 detect.py --weights weights/best.pt --img 640 --conf 0.1 --source {filepath} --save-txt")
 
         detect_folders = sorted(
             [os.path.join(RESULT_FOLDER, d) for d in os.listdir(RESULT_FOLDER)],
@@ -28,13 +33,14 @@ def index():
             reverse=True)
 
         result_files = os.listdir(detect_folders[0])
-        print(result_files)
         image_files = [f for f in result_files if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
         if not image_files:
             return "No image found in results", 500
-        print(image_files)
 
         result_image = os.path.join(detect_folders[0], image_files[0])
+
+        with open(result_image, "rb") as img_file:
+          encoded_string = base64.b64encode(img_file.read()).decode('utf-8')
 
         @after_this_request
         def cleanup(response):
@@ -45,7 +51,24 @@ def index():
                 print(f"Cleanup error: {e}")
             return response
 
-        return send_file(result_image, mimetype='image/jpeg', as_attachment=True)
+        names = ['acne', 'acne-scar', 'pores', 'dark-circle', 'melasma', 'redness']
+        annotations = []
+
+
+        label_path = os.path.join(detect_folders[0], "labels", f"{unique_name}.txt")
+        with open(label_path, "r") as f:
+         for line in f:
+           parts = line.strip().split()
+           class_id = int(parts[0])
+           label = names[class_id]
+           annotations.append(label)
+
+
+        response = {
+        "issues": list(dict.fromkeys(annotations)),
+        "image": encoded_string,
+        }
+        return jsonify(response)
 
     return '''
     <h1>YOLOv5 Flask Server</h1>
